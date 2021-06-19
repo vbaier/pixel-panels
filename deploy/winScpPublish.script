@@ -1,0 +1,4 @@
+open %1%
+synchronize remote -filemask="|deploy/; .idea/; .git/" .. ./pixel-panels
+close
+exit
