@@ -116,18 +116,23 @@ def serve():
     """Starts the server and enters a main loop that splits time between the server processing messages and
     the debug display showing resulting images.
     """
+
+    server_key_path = './certificates/server_nopass.key'
+    server_cert_path = './certificates/server.crt'
+    rootca_cert_path = './certificates/rootCA.crt'
+
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     panelrpc_pb2_grpc.add_PanelControllerServicer_to_server(PanelController(), server)
-    with open('./certificates/server_nopass.key', 'rb') as f:
+    with open(server_key_path, 'rb') as f:
         server_key = f.read()
-    with open('./certificates/server.crt', 'rb') as f:
+    with open(server_cert_path, 'rb') as f:
         server_cert = f.read()
-    with open('./certificates/rootCA.crt', 'rb') as f:
+    with open(rootca_cert_path, 'rb') as f:
         root_ca_cert = f.read()
     server_credentials = grpc.ssl_server_credentials([(server_key, server_cert)], root_ca_cert, True)
 
-    server.add_secure_port('localhost:50051', server_credentials)
-    # server.add_insecure_port('[::]:50051')
+    # Opens the port everywhere
+    server.add_secure_port('[::]:50051', server_credentials)
     server.start()
 
     while server.wait_for_termination(0.1):

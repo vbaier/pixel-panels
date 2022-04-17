@@ -1,6 +1,26 @@
 # pixel-panels
 
-This is a small tool to run animations on WS2812B-based LED displays.
+Pixel Panels is a project that leverages WS2812B-based LED arrays to make animated pixel displays. An example of the panel running a simple test animation is below.
+
+<div class="row" style="display: flex;">
+  <div class="column" style="flex:33.33%;padding:5px;margin:auto;">
+    <img src="Docs/Images/DisplayFront.jpg" alt="Snow" style="width:100%">
+  </div>
+  <div class="column" style="flex:33.33%;padding:5px;">
+    <img src="Docs/Images/TestVideo.gif" alt="Forest" style="width:100%">
+  </div>
+  <div class="column" style="flex:33.33%;padding:5px;margin:auto;">
+    <img src="Docs/Images/DisplayRear.jpg" alt="Mountains" style="width:100%">
+  </div>
+</div>
+
+
+
+### Important Paths:
+* Mechanical - Contains the Fusion 360 and STEP versions of the CAD model
+* Electrical - Contains a Kicad schematic for the electronics
+* PanelDriver - Contains a Python 3 package that drives the display from a Raspberry Pi
+* PanelService - Contains a Spring Boot service that can forward commands to the raspberry pi via gRPC
 
 # Setup for running the CLI locally
 
@@ -9,19 +29,18 @@ The simplest way to run pixelpanels is as a local module. It can be debugged/dev
 ## x86/x64 Setup
 
 The x86/x64 implementation runs comfortably in a python virtual environment and has been tested on debian-family distros and windows.
-
 Upgrade pip and install wheel to ensure binary packages are available and installed quickly.
 
-	pip install --upgrade pip
-	pip install wheel
+	pip3 install --upgrade pip
+	pip3 install wheel
 
 To debug you will need a GUI backend for matplot-lib The easiest method on x86 is to install a qt backend with pip which matplotlib will pick up.
 
-	pip install pyqt5
+	pip3 install pyqt5
 
 Finally complete installation from the PanelDriver folder via
 
-	pip install .
+	pip3 install .
 
 ## Raspberry Pi Setup
 
@@ -31,7 +50,7 @@ Installation on a pi with Raspbian is a bit tricky as there are some specific bi
 
 Navigate to the PanelDriver folder and run
 
-	pip install .
+	pip3 install .
 
 ## Running the local CLI
 
@@ -76,18 +95,15 @@ Generate the actual certificate. You will need an .ext file as an input. Modify 
 Convert the certificate to PKCS12 for importing into the java keystore and then create the keystore
 
 	openssl pkcs12 -export -out server.p12 -name "server" -inkey server.key -in server.crt
-
 	keytool -importkeystore -srckeystore server.p12 -srcstoretype PKCS12 -destkeystore keystore.jks -deststoretype JKS
 
 Create a truststore with our root CA which we are using to sign certificates
 
 	keytool -import -trustcacerts -noprompt -alias ca -ext san=dns:localhost,ip:127.0.0.1 -file rootCA.crt -keystore truststore.jks
 
-Create a client cert for calling the Panel Driver. In our naive implementation, this is also the certificate that is used to access the Panel Service
+Create a client cert for calling the Panel Driver with a CN of "pi_client". In our naive implementation, this is also the certificate that is used to access the Panel Service.
 
 	openssl req -new -newkey rsa:4096 -nodes -keyout client.key -out client.csr
-	CN=pi_client
-
 	openssl x509 -req -CA rootCA.crt -CAkey rootCA.key -in client.csr -out client.crt -days 365 -CAcreateserial
 
 Export the certificate in PKCS12 format for authentication via a browser.
@@ -96,21 +112,19 @@ Export the certificate in PKCS12 format for authentication via a browser.
 
 ### Installing Certificates
 
-Install your root CA and and the pi_client (client.p12) certificate in your browser to authenticate when accessing the Panel Service. An example of adding certificates in Chrome on Windows is below.
-
-https://support.globalsign.com/digital-certificates/digital-certificate-installation/install-client-digital-certificate-windows-using-chrome
+Install your root CA and and the pi_client (client.p12) certificate in your browser to authenticate when accessing the Panel Service. Here is [an example of adding certificates to Chrome on Windows](https://support.globalsign.com/digital-certificates/digital-certificate-installation/install-client-digital-certificate-windows-using-chrome).
 
 ## Configuring the Panel Driver to listen via gRPC
 
 After installing the module navigate to the PanelDriver folder and run
 
-	python -m pixelpanels.rpcserver
+	python3 -m pixelpanels.rpcserver
 
 Much like the local CLI this can be run with the `--debug` option for devices not-connected to Pixel Panel hardware
 
 ## Running the Panel Service
 
-The panel service is built from source with maven and Java 17. Install these dependencies on your platform and then run the following from the PanelService folder
+The panel service is built from source with maven and Java 11. Install these dependencies on your platform and then run the following from the PanelService folder
 
 	mvn clean
 	mvn install
@@ -123,9 +137,27 @@ To start the service run the following from the PanelService/SpringService folde
 
 If both the Panel Driver and Panel Service are running then you can navigate to the following location and you should see a debug image play.
 
-https://localhost:8443/PlayGif
+	https://localhost:8443/PlayGif
 
-# Development workflow on windows
+## Notes for the Pi Zero W
+
+If you want to try running the service directly on a Pi Zero W, you will find issues getting Java 11 on the machine. That said, [Azul offers a JDK](https://www.azul.com/downloads/?architecture=arm-32-bit-hf&package=jdk) for Arm v6 that you can install with the following commands
+
+	cd /usr/lib/jvm
+	sudo wget https://cdn.azul.com/zulu-embedded/bin/zulu11.52.13-ca-jdk11.0.13-linux_aarch32hf.tar.gz
+	sudo tar -xzvf zulu11.52.13-ca-jdk11.0.13-linux_aarch32hf.tar.gz
+	sudo rm zulu11.52.13-ca-jdk11.0.13-linux_aarch32hf.tar.gz
+
+	sudo update-alternatives --install /usr/bin/java java /usr/lib/jvm/zulu11.52.13-ca-jdk11.0.13-linux_aarch32hf/bin/java 10
+	sudo update-alternatives --install /usr/bin/javac javac /usr/lib/jvm/zulu11.52.13-ca-jdk11.0.13-linux_aarch32hf/bin/javac 10
+
+	sudo update-alternatives --config java
+
+The regular Maven package will work just fine with some minor complaints
+
+	sudo apt install maven
+
+# Development workflow on windowsc
 
 To quickly iterate on the Panel Driver portion of the system I've created a simple workflow on windows for deploying and testing updates
 
@@ -137,11 +169,18 @@ Now copy the repo into this folder. If you are developing on windows and publish
 
     winscp /script=.\winScpPublish.script /parameter sftp://<user>:<password>@<IP address>/
 
-You can now run `pip install .` in the `pixel-panels` directory to install the module.
+Now run
+
+	cd ./pixel-panels/PanelDriver
+	pip3 install .
+
+You should now be able to run the local CLI to test
+
+	sudo python3 -m pixelpanels "../data/Test_64x32.gif"
 
 # Outstanding Tasks
 
-* Expand documentation of the Panel Service
+* Expand documentation
 * Improve naming and file structure
 * Clean up .gitignore files
 * Connect the image upload call to the PlayGif feature on the Raspberry Pi

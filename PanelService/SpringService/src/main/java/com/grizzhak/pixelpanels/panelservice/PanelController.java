@@ -32,6 +32,9 @@ public class PanelController {
     @Value("${pixelpanels.certificates.clientKey}")
     private Resource clientKey;
 
+    @Value("${pixelpanels.rpcServerPath}")
+    String target;
+
     PanelController(PanelRepository repository) {
         this.repository = repository;
     }
@@ -39,8 +42,6 @@ public class PanelController {
     @GetMapping("/PlayGif")
     @ResponseStatus(value = HttpStatus.OK)
     public void playGif() throws Exception{
-
-        String target = "localhost:50051";
 
         TlsChannelCredentials.Builder tlsBuilder = TlsChannelCredentials.newBuilder()
                 .keyManager(clientCert.getFile(), clientKey.getFile())

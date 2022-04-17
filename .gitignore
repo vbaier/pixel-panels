@@ -1,5 +1,8 @@
 # Deployment helpers
 *.bat
+*.srl
 
 # Local data
 data/local/
+certs/local/
+*certificates/local/*
