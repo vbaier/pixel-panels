@@ -5,4 +5,4 @@
 # Local data
 data/local/
 certs/local/
-*certificates/local/*
+**/certificates/local/

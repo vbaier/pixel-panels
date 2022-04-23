@@ -117,9 +117,9 @@ def serve():
     the debug display showing resulting images.
     """
 
-    server_key_path = './certificates/server_nopass.key'
-    server_cert_path = './certificates/server.crt'
-    rootca_cert_path = './certificates/rootCA.crt'
+    server_key_path = './certificates/panel_driver_nopass.key'
+    server_cert_path = './certificates/panel_driver.crt'
+    rootca_cert_path = './certificates/root_ca.crt'
 
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     panelrpc_pb2_grpc.add_PanelControllerServicer_to_server(PanelController(), server)
